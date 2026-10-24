@@ -1,0 +1,30 @@
+{
+    "users": [
+        [
+            "ID",
+            "int"
+        ],
+        [
+            "name",
+            "str"
+        ],
+        [
+            "age",
+            "int"
+        ],
+        [
+            "is_active",
+            "bool"
+        ]
+    ],
+    "users2": [
+        [
+            "ID",
+            "int"
+        ],
+        [
+            "f",
+            "int"
+        ]
+    ]
+}

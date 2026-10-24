@@ -1,2 +1,10 @@
+#!/usr/bin/env python3
+
+from . import engine
+
+
+
 def main():
-    print("Hello, world!")
+    # engine.welcome()
+    engine.run()
+
