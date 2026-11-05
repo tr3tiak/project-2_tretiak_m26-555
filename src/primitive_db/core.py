@@ -1,19 +1,23 @@
 ''' Здесь будет основная логика работы с таблицами и данными.'''
 
-from .utils import load_table_data, save_table_data
 from prettytable import PrettyTable
 
+from .decorators import handle_db_errors
+from .utils import load_table_data, save_table_data
+
+
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     if table_name in metadata:
-        print(f"Ошибка: таблица {table_name} уже существует")
-        return metadata
+        raise ValueError(f"Таблица '{table_name}' уже существует")
 
     allowed_types = {"int", "str", "bool"}
 
     for column_name, column_type in columns:
         if column_type not in allowed_types:
-            print(f"Ошибка: {column_name} недопустимый тип {column_type}")
-            return metadata
+            raise ValueError(
+                f"Недопустимый тип '{column_type}' у столбца {column_name}"
+            )
 
     columns = [("ID", "int")] + columns
 
@@ -22,11 +26,10 @@ def create_table(metadata, table_name, columns):
     return metadata
 
 
-
+@handle_db_errors
 def drop_table(metadata, table_name):
     if table_name not in metadata:
-        print(f"Ошибка: таблица {table_name} не существует")
-        return metadata
+        raise KeyError(table_name)
 
     del metadata[table_name]
 
@@ -65,11 +68,14 @@ def convert_value(raw, type_name):
     raise ValueError("Тип данных не совпадает")
 
 
+@handle_db_errors
 def insert(metadata, table_name, values):
     if table_name not in metadata:
-        raise ValueError(f"Таблица '{table_name}' не существует")
+        raise KeyError(table_name)
     if len(metadata[table_name]) != (len(values) + 1):
-        raise ValueError("Количество переданных значений соответствует количеству столбцов")
+        raise ValueError(
+            "Количество переданных значений не соответствует количеству столбцов"
+        )
     
     cols = metadata[table_name][1:]
     converted = []
@@ -98,8 +104,8 @@ def insert(metadata, table_name, values):
 
 
 
+@handle_db_errors
 def select(table_data, where_clause=None):
-    
     if where_clause is None:
         return table_data
 
@@ -108,16 +114,28 @@ def select(table_data, where_clause=None):
         if all(row[k] == v for k, v in where_clause.items())
     ]
 
+
+@handle_db_errors
 def update(table_data, set_clause, where_clause):
     if not where_clause:
         raise ValueError("update без условий запрещён")
 
     for row in table_data:
-        if all(row.get(k) == v for k, v in where_clause.items()):
+        for key in where_clause:
+            if key not in row:
+                raise KeyError(key)
+        for col in set_clause:
+            if col not in row:
+                raise KeyError(col)
+
+    for row in table_data:
+        if all(row[k] == v for k, v in where_clause.items()):
             for col, new_value in set_clause.items():
                 row[col] = new_value
     return table_data
 
+
+@handle_db_errors
 def delete(table_data, where_clause):
     result = [
         row for row in table_data

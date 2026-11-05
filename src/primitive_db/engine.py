@@ -102,12 +102,10 @@ def run():
             if any(v == "" for v in values):
                 print("Error: пустое значение в списке")
                 continue
-            try:
-                new_id = insert(metadata, table_name, values)
-            except ValueError as e:
-                print(f'{e}')
-            else:
-                print(f'Запись с ID={new_id} успешно добавлена в таблицу "{table_name}".')
+            new_id = insert(metadata, table_name, values)
+            if new_id is None:
+                continue
+            print(f'Запись с ID={new_id} успешно добавлена в таблицу "{table_name}".')
 
                 
         elif command == "select":
@@ -141,6 +139,8 @@ def run():
                 continue
             column_names = [col[0] for col in metadata[table_name]]
             selected_data = select(data, where_clause)
+            if selected_data is None:
+                continue
             print_table(selected_data, column_names)
 
         elif command == "delete":
@@ -180,6 +180,8 @@ def run():
                 if all(row.get(k) == v for k, v in where_clause.items())
             ]
             remaining = delete(data, where_clause)
+            if remaining is None:
+                continue
             save_table_data(table_name, remaining)
             if not deleted_rows:
                 print("Записи для удаления не найдены.")
@@ -239,14 +241,12 @@ def run():
                 print("Ошибка: данные таблицы должны быть списком строк")
                 continue
 
-            try:
-                matched_rows = [
-                    row for row in data
-                    if all(row.get(k) == v for k, v in where_clause.items())
-                ]
-                update(data, set_clause, where_clause)
-            except ValueError as e:
-                print(e)
+            matched_rows = [
+                row for row in data
+                if all(row.get(k) == v for k, v in where_clause.items())
+            ]
+            updated = update(data, set_clause, where_clause)
+            if updated is None:
                 continue
 
             save_table_data(table_name, data)
