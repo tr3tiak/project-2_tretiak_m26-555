@@ -1,4 +1,0 @@
-{"version": 2, "width": 80, "height": 24, "timestamp": 1794155773, "env": {"SHELL": "/bin/zsh", "TERM": "dumb"}}
-[0.071261, "o", "=== make install (uv sync + editable install) ===\r\n"]
-[0.92893, "o", "=== make run → database ===\r\n"]
-[0.933501, "o", "./scripts/record_install_and_tables.sh: строка 17: database: command not found\r\n"]

@@ -1,2 +1,0 @@
-{"version": 2, "width": 80, "height": 24, "timestamp": 1794155774, "env": {"SHELL": "/bin/zsh", "TERM": "dumb"}}
-[0.053307, "o", "./scripts/record_final.sh: строка 19: database: command not found\r\n"]
