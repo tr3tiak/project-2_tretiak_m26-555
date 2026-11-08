@@ -59,3 +59,5 @@ asciinema play demo.cast
 make record
 ```
 
+[![asciicast](https://asciinema.org/a/haPGQrmLNmnY9qjM.svg)]
+(https://asciinema.org/a/haPGQrmLNmnY9qjM)
