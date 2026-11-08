@@ -1,70 +1,61 @@
-Управление таблицами
+# primitive-db
 
-***Процесс работы с таблицей***
-Функции:
-<command> create_table <имя_таблицы> <столбец1:тип> <столбец2:тип> .. - создать таблицу
-<command> list_tables - показать список всех таблиц
-<command> drop_table <имя_таблицы> - удалить таблицу
-<command> exit - выход из программы
-<command> help - справочная информация 
+Консольная «база данных»: метаданные таблиц в `db_meta.json`, строки — в `data/*.json`. CRUD в терминале, декораторы для ошибок, подтверждения удаления и замера времени, кэш результатов `select`.
 
->>>Введите команду: create_table users name:str age:int is_active:bool
-Таблица "users" успешно создана со столбцами: ID:int, name:str, age:int, is_active:bool
+## Установка и запуск
 
->>>Введите команду: create_table users name:str
-Ошибка: Таблица "users" уже существует.
+```bash
+make install
+make run
+```
 
->>>Введите команду: list_tables
-- users
+Эквивалент без Makefile:
 
->>>Введите команду: drop_table users
-Таблица "users" успешно удалена.
+```bash
+uv sync --all-groups
+uv pip install -e .
+database
+```
 
->>>Введите команду: drop_table products
-Ошибка: Таблица "products" не существует.
+Линтер (как в автопроверке):
 
->>>Введите команду: help
-***Процесс работы с таблицей***
-Функции:
-<command> create_table <имя_таблицы> <столбец1:тип> <столбец2:тип> .. - создать таблицу
-<command> list_tables - показать список всех таблиц
-<command> drop_table <имя_таблицы> - удалить таблицу
-<command> exit - выход из программы
-<command> help - справочная информация
+```bash
+make lint
+```
 
-CRUD-операции
+Команда `database` использует `db_meta.json` и каталог `data/` из **текущей рабочей директории**.
 
-***Операции с данными***
+## Архитектура
 
-Функции:
-<command> insert into <имя_таблицы> values (<значение1>, <значение2>, ...) - создать запись.
-<command> select from <имя_таблицы> where <столбец> = <значение> - прочитать записи по условию.
-<command> select from <имя_таблицы> - прочитать все записи.
-<command> update <имя_таблицы> set <столбец1> = <новое_значение1> where <столбец_условия> = <значение_условия> - обновить запись.
-<command> delete from <имя_таблицы> where <столбец> = <значение> - удалить запись.
-<command> info <имя_таблицы> - вывести информацию о таблице.
-<command> exit - выход из программы
-<command> help - справочная информация
+| Модуль | Назначение |
+|--------|------------|
+| `main.py` | Точка входа |
+| `engine.py` | Цикл `db >`, разбор команд |
+| `core.py` | Таблицы и CRUD |
+| `utils.py` | Чтение/запись JSON |
+| `parser.py` | `where`, `set`, `values` |
+| `decorators.py` | `handle_db_errors`, `confirm_action`, `log_time`, `create_cacher` |
+| `constants.py` | `META_FILE`, `VALID_TYPES`, тексты подсказок |
 
->>> Введите команду: insert into users values ("Sergei", 28, true)
-Запись с ID=1 успешно добавлена в таблицу "users".
+## Дополнительные возможности
 
->>> Введите команду: select from users where age = 28
-+----+--------+-----+-----------+
-| ID |  name  | age | is_active |
-+----+--------+-----+-----------+
-| 1  | Sergei | 28  |    True   |
-+----+--------+-----+-----------+
+**`@handle_db_errors`** — единый вывод ошибок валидации и отсутствующих таблиц/столбцов.
 
->>> Введите команду: update users set age = 29 where name = "Sergei"
-Запись с ID=1 в таблице "users" успешно обновлена.
+**`@confirm_action`** — перед `drop_table` и `delete` запрос: `Вы уверены, что хотите выполнить "…"? [y/n]:` (только `y` выполняет действие).
 
->>> Введите команду: delete from users where ID = 1
-Запись с ID=1 успешно удалена из таблицы "users".
+**`@log_time`** — для `insert` и `select` печатается время выполнения; повторный `select` использует кэш из `create_cacher()`.
 
->>> Введите команду: info users
-Таблица: users
-Столбцы: ID:int, name:str, age:int, is_active:bool
-Количество записей: 0
+## Демонстрация (asciinema)
 
-[![asciicast](https://asciinema.org/a/haPGQrmLNmnY9qjM.svg)](https://asciinema.org/a/haPGQrmLNmnY9qjM)
+Полный сценарий в `demo.cast`: создание таблицы → insert → select → update → delete (с подтверждением) → drop_table → exit.
+
+```bash
+asciinema play demo.cast
+```
+
+Перезапись:
+
+```bash
+make record
+```
+

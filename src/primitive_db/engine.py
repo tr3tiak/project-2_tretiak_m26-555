@@ -1,33 +1,58 @@
-'''Этот файл будет отвечать за запуск, игровой цикл и парсинг команд.'''
+"""Основной цикл приложения и разбор пользовательских команд."""
 
-import prompt
-from .core import create_table, drop_table, list_table, insert, select, delete, update, print_table
-from .utils import load_metadata, save_metadata, load_table_data, save_table_data
 import shlex
 
+import prompt
+
+from .constants import (
+    CREATE_TABLE_USAGE,
+    DELETE_USAGE,
+    DROP_TABLE_USAGE,
+    INFO_USAGE,
+    META_FILE,
+    PROMPT,
+    SELECT_USAGE,
+    UPDATE_USAGE,
+)
+from .core import (
+    create_table,
+    delete,
+    drop_table,
+    insert,
+    list_table,
+    print_table,
+    select,
+    update,
+)
+from .parser import parse_insert_values, parse_set, parse_where
+from .utils import load_metadata, load_table_data, save_metadata, save_table_data
+
+
 def welcome():
-    name = prompt.string(''' Первая попытка запустить проект!
+    """Приветственный режим первого запуска (демо)."""
+    name = prompt.string(""" Первая попытка запустить проект!
 ***
 <command> exit - выйти из программы
 <command> help - справочная информация
-Введите команду: ''')
+Введите команду: """)
     if name == "exit":
         print("Выход из программы")
     elif name == "help":
         print("Справочная информация")
-        
+
 
 def run():
-    filepath = "db_meta.json"
+    """Запускает интерактивную сессию базы данных."""
+    filepath = META_FILE
 
     while True:
         metadata = load_metadata(filepath)
 
         try:
-            user_input = prompt.string("db > ")
+            user_input = prompt.string(PROMPT)
             args = shlex.split(user_input)
-        except ValueError as e:
-            print(f"Ошибка разбора команды: {e}")
+        except ValueError as error:
+            print(f"Ошибка разбора команды: {error}")
             continue
 
         if not args:
@@ -40,7 +65,7 @@ def run():
 
         if command == "create_table":
             if len(args) < 2:
-                print("Использование: create_table <имя> [столбец:тип ...]")
+                print(CREATE_TABLE_USAGE)
                 continue
 
             table_name = args[1]
@@ -57,16 +82,18 @@ def run():
             previous_metadata = metadata.copy()
             create_table(metadata, table_name, columns)
 
-            
-
             if metadata != previous_metadata:
                 save_metadata(filepath, metadata)
-                s = ", ".join(":".join(cols) for cols in metadata[table_name])
-                print(f"Таблица {table_name} успешно создана со столбцами: {s}")
+                column_desc = ", ".join(
+                    ":".join(column) for column in metadata[table_name]
+                )
+                print(
+                    f"Таблица {table_name} успешно создана со столбцами: {column_desc}"
+                )
 
         elif command == "drop_table":
             if len(args) != 2:
-                print("Использование: drop_table <имя>")
+                print(DROP_TABLE_USAGE)
                 continue
 
             table_name = args[1]
@@ -77,8 +104,10 @@ def run():
             if metadata != previous_metadata:
                 save_metadata(filepath, metadata)
                 print(f"Таблица {table_name} удалена")
+
         elif command == "list_tables":
             list_table(metadata)
+
         elif command == "insert":
             if len(args) < 5:
                 print("Error: недостаточно аргументов")
@@ -90,27 +119,21 @@ def run():
                 print("Error: ожидается ключевое слово 'values'")
                 continue
             table_name = args[2]
-            values_part = " ".join(args[4:]) 
-            if not (values_part.startswith("(") and values_part.endswith(")")):
-                print("Error: значения должны быть в скобках")
+            values_part = " ".join(args[4:])
+            try:
+                values = parse_insert_values(values_part)
+            except ValueError as error:
+                print(f"Error: {error}")
                 continue
-            raw_values = values_part[1:-1].strip()
-            if not raw_values:
-                print("Error: список значений пуст")
-                continue
-            values = [v.strip() for v in raw_values.split(",")]
-            if any(v == "" for v in values):
-                print("Error: пустое значение в списке")
-                continue
+
             new_id = insert(metadata, table_name, values)
             if new_id is None:
                 continue
             print(f'Запись с ID={new_id} успешно добавлена в таблицу "{table_name}".')
 
-                
         elif command == "select":
             if len(args) < 3:
-                print("Использование: select from <имя_таблицы> [where столбец = значение AND ...]")
+                print(SELECT_USAGE)
                 continue
             if args[1].lower() != "from":
                 print("Error: ожидается 'select from'")
@@ -122,7 +145,7 @@ def run():
             where_clause = None
             if len(args) > 3:
                 if args[3].lower() != "where":
-                    print("Использование: select from <имя_таблицы> [where столбец = значение AND ...]")
+                    print(SELECT_USAGE)
                     continue
                 where_text = " ".join(args[4:])
                 if not where_text:
@@ -137,7 +160,7 @@ def run():
             if not isinstance(data, list):
                 print("Ошибка: данные таблицы должны быть списком строк")
                 continue
-            column_names = [col[0] for col in metadata[table_name]]
+            column_names = [column[0] for column in metadata[table_name]]
             selected_data = select(data, where_clause)
             if selected_data is None:
                 continue
@@ -145,7 +168,7 @@ def run():
 
         elif command == "delete":
             if len(args) < 5:
-                print("Использование: delete from <имя_таблицы> where столбец = значение AND ...")
+                print(DELETE_USAGE)
                 continue
             if args[1].lower() != "from":
                 print("Error: ожидается 'delete from'")
@@ -155,7 +178,7 @@ def run():
                 print(f"Ошибка: таблица {table_name} не существует")
                 continue
             if args[3].lower() != "where":
-                print("Использование: delete from <имя_таблицы> where столбец = значение AND ...")
+                print(DELETE_USAGE)
                 continue
             where_text = " ".join(args[4:])
             if not where_text:
@@ -176,8 +199,9 @@ def run():
                 continue
 
             deleted_rows = [
-                row for row in data
-                if all(row.get(k) == v for k, v in where_clause.items())
+                row
+                for row in data
+                if all(row.get(key) == value for key, value in where_clause.items())
             ]
             remaining = delete(data, where_clause)
             if remaining is None:
@@ -187,14 +211,15 @@ def run():
                 print("Записи для удаления не найдены.")
             else:
                 for row in deleted_rows:
+                    row_id = row["ID"]
                     print(
-                        f'Запись с ID={row["ID"]} успешно удалена из таблицы "{table_name}".'
+                        f"Запись с ID={row_id} успешно удалена "
+                        f'из таблицы "{table_name}".'
                     )
 
         elif command == "update":
-            usage = "Использование: update <имя_таблицы> set столбец = значение, ... where столбец = значение AND ..."
             if len(args) < 6:
-                print(usage)
+                print(UPDATE_USAGE)
                 continue
 
             table_name = args[1]
@@ -206,16 +231,16 @@ def run():
                 continue
 
             where_idx = None
-            for i, token in enumerate(args[3:], start=3):
+            for index, token in enumerate(args[3:], start=3):
                 if token.lower() == "where":
-                    where_idx = i
+                    where_idx = index
                     break
             if where_idx is None:
                 print("Ошибка: update без условий запрещён")
                 continue
 
             set_text = " ".join(args[3:where_idx])
-            where_text = " ".join(args[where_idx + 1:])
+            where_text = " ".join(args[where_idx + 1 :])
             if not set_text:
                 print("Ошибка: после set нет значений")
                 continue
@@ -242,8 +267,9 @@ def run():
                 continue
 
             matched_rows = [
-                row for row in data
-                if all(row.get(k) == v for k, v in where_clause.items())
+                row
+                for row in data
+                if all(row.get(key) == value for key, value in where_clause.items())
             ]
             updated = update(data, set_clause, where_clause)
             if updated is None:
@@ -254,13 +280,15 @@ def run():
                 print("Записи для обновления не найдены.")
             else:
                 for row in matched_rows:
+                    row_id = row["ID"]
                     print(
-                        f'Запись с ID={row["ID"]} в таблице "{table_name}" успешно обновлена.'
+                        f'Запись с ID={row_id} в таблице "{table_name}" '
+                        "успешно обновлена."
                     )
 
         elif command == "info":
             if len(args) != 2:
-                print("Использование: info <имя_таблицы>")
+                print(INFO_USAGE)
                 continue
             table_name = args[1]
             if table_name not in metadata:
@@ -268,9 +296,9 @@ def run():
                 continue
             data = load_table_data(table_name)
             columns = metadata[table_name]
-            s = ", ".join(":".join(col) for col in columns)
+            column_desc = ", ".join(":".join(column) for column in columns)
             print(f"Таблица: {table_name}")
-            print(f"Столбцы: {s}")
+            print(f"Столбцы: {column_desc}")
             print(f"Количество записей: {len(data) if isinstance(data, list) else 0}")
 
         elif command == "help":
@@ -280,11 +308,8 @@ def run():
             print(f"Неизвестная команда: {command}")
 
 
-
-# src/primitive_db/engine.py
 def print_help():
-    """Prints the help message for the current mode."""
-   
+    """Печатает справку по доступным командам."""
     print("\n***Процесс работы с таблицей***")
     print("Функции:")
     print("<command> create_table <имя_таблицы> <столбец1:тип> .. - создать таблицу")
@@ -293,43 +318,25 @@ def print_help():
 
     print("\n***Операции с данными***")
     print("Функции:")
-    print("<command> insert into <имя_таблицы> values (<значение1>, <значение2>, ...) - создать запись.")
-    print("<command> select from <имя_таблицы> where <столбец> = <значение> - прочитать записи по условию.")
+    print(
+        "<command> insert into <имя_таблицы> values "
+        "(<значение1>, <значение2>, ...) - создать запись."
+    )
+    print(
+        "<command> select from <имя_таблицы> where <столбец> = <значение> "
+        "- прочитать записи по условию."
+    )
     print("<command> select from <имя_таблицы> - прочитать все записи.")
-    print("<command> update <имя_таблицы> set <столбец1> = <новое_значение1> where <столбец_условия> = <значение_условия> - обновить запись.")
-    print("<command> delete from <имя_таблицы> where <столбец> = <значение> - удалить запись.")
+    print(
+        "<command> update <имя_таблицы> set <столбец1> = <новое_значение1> "
+        "where <столбец_условия> = <значение_условия> - обновить запись."
+    )
+    print(
+        "<command> delete from <имя_таблицы> where <столбец> = <значение> "
+        "- удалить запись."
+    )
     print("<command> info <имя_таблицы> - вывести информацию о таблице.")
-    
+
     print("\nОбщие команды:")
     print("<command> exit - выход из программы")
     print("<command> help - справочная информация\n")
-
-
-def parse_value(s):
-    s = s.strip()
-
-    lowered = s.lower()
-    if lowered == "true":
-        return True
-    if lowered == "false":
-        return False
-    try:
-        return int(s)
-    except ValueError:
-        return s
-
-def parse_conditions(text, sep):
-    result = {}
-    for part in text.split(sep):
-        key, value = part.split("=")
-        result[key.strip()] = parse_value(value)
-
-    return result
-
-def parse_where(text):
-    return parse_conditions(text, " AND ")
-
-def parse_set(text):
-    return parse_conditions(text, ",")
-
-
