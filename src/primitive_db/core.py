@@ -9,6 +9,8 @@ from .constants import (
     ID_COLUMN_TYPE,
     TYPE_MAP,
     VALID_TYPES,
+    table_exists_message,
+    table_missing_message,
 )
 from .decorators import confirm_action, create_cacher, handle_db_errors, log_time
 from .utils import load_table_data, save_table_data
@@ -29,7 +31,7 @@ def _select_cache_key(table_data, where_clause):
 def create_table(metadata, table_name, columns):
     """Создаёт таблицу с автоматическим столбцом ID."""
     if table_name in metadata:
-        raise ValueError(f"Таблица '{table_name}' уже существует")
+        raise ValueError(table_exists_message(table_name))
 
     for column_name, column_type in columns:
         if column_type not in VALID_TYPES:
@@ -47,7 +49,7 @@ def create_table(metadata, table_name, columns):
 def drop_table(metadata, table_name):
     """Удаляет таблицу из метаданных."""
     if table_name not in metadata:
-        raise KeyError(table_name)
+        raise ValueError(table_missing_message(table_name))
 
     del metadata[table_name]
     return metadata
@@ -59,7 +61,7 @@ def list_table(metadata):
         print("пусто")
     else:
         for key in metadata:
-            print(key)
+            print(f"- {key}")
 
 
 def convert_value(raw, type_name):
@@ -90,7 +92,7 @@ def convert_value(raw, type_name):
 def insert(metadata, table_name, values):
     """Добавляет строку в таблицу и возвращает присвоенный ID."""
     if table_name not in metadata:
-        raise KeyError(table_name)
+        raise ValueError(table_missing_message(table_name))
     if len(metadata[table_name]) != (len(values) + 1):
         raise ValueError(
             "Количество переданных значений не соответствует количеству столбцов"

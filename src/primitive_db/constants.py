@@ -6,7 +6,7 @@ ID_COLUMN = "ID"
 ID_COLUMN_TYPE = "int"
 VALID_TYPES = frozenset({"int", "str", "bool"})
 TYPE_MAP = {"int": int, "str": str, "bool": bool}
-PROMPT = "db > "
+PROMPT = ">>>Введите команду: "
 CONFIRM_YES = "y"
 WHERE_SEPARATOR = " AND "
 SET_SEPARATOR = ","
@@ -28,3 +28,20 @@ INFO_USAGE = "Использование: info <имя_таблицы>"
 
 ACTION_DROP_TABLE = "удаление таблицы"
 ACTION_DELETE_ROWS = "удаление записей"
+
+
+def table_exists_message(table_name: str) -> str:
+    """Текст ошибки: таблица уже существует."""
+    return f'Таблица "{table_name}" уже существует.'
+
+
+def table_missing_message(table_name: str) -> str:
+    """Текст ошибки: таблица не существует."""
+    return f'Таблица "{table_name}" не существует.'
+
+
+def is_table_status_error(message: str) -> bool:
+    """Проверяет, что ValueError — про существование таблицы."""
+    return message.startswith('Таблица "') and (
+        message.endswith(" уже существует.") or message.endswith(" не существует.")
+    )

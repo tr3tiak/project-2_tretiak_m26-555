@@ -13,6 +13,7 @@ from .constants import (
     PROMPT,
     SELECT_USAGE,
     UPDATE_USAGE,
+    table_missing_message,
 )
 from .core import (
     create_table,
@@ -88,7 +89,8 @@ def run():
                     ":".join(column) for column in metadata[table_name]
                 )
                 print(
-                    f"Таблица {table_name} успешно создана со столбцами: {column_desc}"
+                    f'Таблица "{table_name}" успешно создана со столбцами: '
+                    f"{column_desc}"
                 )
 
         elif command == "drop_table":
@@ -103,27 +105,27 @@ def run():
 
             if metadata != previous_metadata:
                 save_metadata(filepath, metadata)
-                print(f"Таблица {table_name} удалена")
+                print(f'Таблица "{table_name}" успешно удалена.')
 
         elif command == "list_tables":
             list_table(metadata)
 
         elif command == "insert":
             if len(args) < 5:
-                print("Error: недостаточно аргументов")
+                print("Ошибка: недостаточно аргументов")
                 continue
             if args[0].lower() != "insert" or args[1].lower() != "into":
-                print("Error: ожидается 'insert into'")
+                print("Ошибка: ожидается 'insert into'")
                 continue
             if args[3].lower() != "values":
-                print("Error: ожидается ключевое слово 'values'")
+                print("Ошибка: ожидается ключевое слово 'values'")
                 continue
             table_name = args[2]
             values_part = " ".join(args[4:])
             try:
                 values = parse_insert_values(values_part)
             except ValueError as error:
-                print(f"Error: {error}")
+                print(f"Ошибка: {error}")
                 continue
 
             new_id = insert(metadata, table_name, values)
@@ -136,11 +138,11 @@ def run():
                 print(SELECT_USAGE)
                 continue
             if args[1].lower() != "from":
-                print("Error: ожидается 'select from'")
+                print("Ошибка: ожидается 'select from'")
                 continue
             table_name = args[2]
             if table_name not in metadata:
-                print(f"Ошибка: таблица {table_name} не существует")
+                print(f"Ошибка: {table_missing_message(table_name)}")
                 continue
             where_clause = None
             if len(args) > 3:
@@ -171,11 +173,11 @@ def run():
                 print(DELETE_USAGE)
                 continue
             if args[1].lower() != "from":
-                print("Error: ожидается 'delete from'")
+                print("Ошибка: ожидается 'delete from'")
                 continue
             table_name = args[2]
             if table_name not in metadata:
-                print(f"Ошибка: таблица {table_name} не существует")
+                print(f"Ошибка: {table_missing_message(table_name)}")
                 continue
             if args[3].lower() != "where":
                 print(DELETE_USAGE)
@@ -224,10 +226,10 @@ def run():
 
             table_name = args[1]
             if table_name not in metadata:
-                print(f"Ошибка: таблица {table_name} не существует")
+                print(f"Ошибка: {table_missing_message(table_name)}")
                 continue
             if args[2].lower() != "set":
-                print("Error: ожидается 'update <имя_таблицы> set'")
+                print("Ошибка: ожидается 'update <имя_таблицы> set'")
                 continue
 
             where_idx = None
@@ -292,7 +294,7 @@ def run():
                 continue
             table_name = args[1]
             if table_name not in metadata:
-                print(f"Ошибка: таблица {table_name} не существует")
+                print(f"Ошибка: {table_missing_message(table_name)}")
                 continue
             data = load_table_data(table_name)
             columns = metadata[table_name]
@@ -312,7 +314,10 @@ def print_help():
     """Печатает справку по доступным командам."""
     print("\n***Процесс работы с таблицей***")
     print("Функции:")
-    print("<command> create_table <имя_таблицы> <столбец1:тип> .. - создать таблицу")
+    print(
+        "<command> create_table <имя_таблицы> <столбец1:тип> <столбец2:тип> .. "
+        "- создать таблицу"
+    )
     print("<command> list_tables - показать список всех таблиц")
     print("<command> drop_table <имя_таблицы> - удалить таблицу")
 

@@ -2,7 +2,7 @@
 
 import time
 
-from .constants import CONFIRM_YES
+from .constants import CONFIRM_YES, is_table_status_error
 
 
 def handle_db_errors(func):
@@ -19,7 +19,11 @@ def handle_db_errors(func):
         except KeyError as error:
             print(f"Ошибка: Таблица или столбец {error} не найден.")
         except ValueError as error:
-            print(f"Ошибка валидации: {error}")
+            message = str(error)
+            if is_table_status_error(message):
+                print(f"Ошибка: {message}")
+            else:
+                print(f"Ошибка валидации: {message}")
         except Exception as error:
             print(f"Произошла непредвиденная ошибка: {error}")
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Консольная JSON-база данных с CRUD и декораторами (primitive-db)"
 readme = "README.md"
 authors = [
-    { name = "nikita", email = "a@a.com" }
+    { name = "alexander", email = "stretiak20@gmail.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [
