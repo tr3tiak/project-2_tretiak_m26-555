@@ -16,8 +16,7 @@ def load_metadata(filepath: str = META_FILE) -> dict:
     try:
         with open(filepath, encoding="utf-8") as file:
             return json.load(file)
-    except FileNotFoundError as error:
-        print(f"Ошибка: {error}")
+    except FileNotFoundError:
         return {}
 
 
