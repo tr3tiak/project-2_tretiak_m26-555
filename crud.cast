@@ -1,0 +1,2 @@
+{"version": 2, "width": 80, "height": 24, "timestamp": 1794155774, "env": {"SHELL": "/bin/zsh", "TERM": "dumb"}}
+[0.039397, "o", "./scripts/record_crud.sh: строка 15: database: command not found\r\n"]
