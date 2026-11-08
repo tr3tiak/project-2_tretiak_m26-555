@@ -44,7 +44,7 @@ make lint
 - `exit` — выход из программы
 - `help` — справочная информация
 
-Пример (как в задании):
+Пример:
 
 ```text
 >>>Введите команду: create_table users name:str age:int is_active:bool
@@ -85,7 +85,7 @@ make lint
 - `delete from <имя_таблицы> where <столбец> = <значение>` — удалить запись
 - `info <имя_таблицы>` — вывести информацию о таблице
 
-Пример (как в задании; строки `log_time` и подтверждение `delete` — из финальной версии с декораторами):
+Пример:
 
 ```text
 >>>Введите команду: insert into users values ("Sergei", 28, true)
@@ -122,4 +122,4 @@ make lint
 
 ## Демонстрация
 
-[![asciicast](https://asciinema.org/a/haPGQrmLNmnY9qjM.svg)](https://asciinema.org/a/haPGQrmLNmnY9qjM)
+[![asciicast](https://asciinema.org/a/Z1VFyravCNZL7nt1.svg)](https://asciinema.org/a/Z1VFyravCNZL7nt1)
